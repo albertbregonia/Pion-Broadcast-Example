@@ -1,3 +1,4 @@
+//WebRTC-Broadcast © Albert Bregonia 2021
 package main
 
 import (
@@ -9,6 +10,8 @@ import (
 
 	"github.com/pion/webrtc/v3"
 )
+
+// Main handler for creating/managing a WebSocket/WebRTC PeerConnection
 
 func ErrorHandler() {
 	if e := recover(); e != nil {

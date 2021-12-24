@@ -1,3 +1,4 @@
+//WebRTC-Broadcast © Albert Bregonia 2021
 package main
 
 import (
@@ -32,10 +33,10 @@ func main() {
 	log.Fatal(http.ListenAndServeTLS(`:443`, `server.crt`, `server.key`, nil))
 }
 
-//register codecs to recv
+//register codecs to receive
 func RTCSetup() {
 	mediaEngine := &webrtc.MediaEngine{}
-	if e := mediaEngine.RegisterCodec(webrtc.RTPCodecParameters{
+	if e := mediaEngine.RegisterCodec(webrtc.RTPCodecParameters{ //support VP8 video
 		RTPCodecCapability: webrtc.RTPCodecCapability{
 			MimeType:     webrtc.MimeTypeVP8,
 			ClockRate:    90000,

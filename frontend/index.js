@@ -1,3 +1,5 @@
+//WebRTC-Broadcast © Albert Bregonia 2021
+
 const broadcast = document.getElementById(`broadcast`),
       whiteboard = document.getElementById(`whiteboard`);
 
@@ -12,7 +14,7 @@ function formatSignal(event, data) {
 
 const ws = new WebSocket(`wss://${location.hostname}:${location.port}/connect`); //create a websocket for WebRTC signaling 
 ws.onopen = () => console.log(`Connected`);
-ws.onclose = ws.onerror = e => alert(`Disconnected ${e.reason}`);
+ws.onclose = ws.onerror = ({reason}) => alert(`Disconnected ${reason}`);
 
 const rtc = new RTCPeerConnection({iceServers: [{urls: `stun:stun.l.google.com:19302`}]}); //create a WebRTC instance
 rtc.onicecandidate = ({candidate}) => candidate && ws.send(formatSignal(`ice`, candidate)); //if the ice candidate is not null, send it to the peer
