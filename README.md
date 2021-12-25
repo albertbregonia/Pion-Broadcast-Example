@@ -2,7 +2,7 @@
 This repository serves as an example/template for creating a WebRTC based Web Application.
 
 This is the format I usually follow and I will use this repository as a boilerplate to constantly `git clone`
-when testing new ideas for projects that use [Pion WebRTC](https://github.com/pion/webrtc) in Golang.
+when testing new ideas for projects that use [pion/webrtc](https://github.com/pion/webrtc) in Golang.
 A lot of this setup is usually very tedious and  that is why I have organized everything into a manner 
 that will be easily debuggable and allow me to get to production faster.
 
@@ -25,5 +25,5 @@ The frontend will then initialize the event handlers for drawing on the canvas a
 from drawing on the canvas should be distributed to all peers connected to the server through the dummy track
 
 ## Dependencies
-- [Pion WebRTC](https://github.com/pion/webrtc)
-- [Gorilla WebSocket](https://github.com/gorilla/websocket)
+- [pion/webrtc](https://github.com/pion/webrtc)
+- [gorilla/websocket](https://github.com/gorilla/websocket)
