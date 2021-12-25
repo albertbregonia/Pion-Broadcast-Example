@@ -38,7 +38,7 @@ ws.onmessage = async ({data}) => { //signal handler
             break;
         case `offer`:
             console.log(`got offer!`, content);
-            await rtc.setRemoteDescription(offer); //accept offer
+            await rtc.setRemoteDescription(content); //accept offer
             const answer = await rtc.createAnswer();
             await rtc.setLocalDescription(answer);
             ws.send(formatSignal(`answer`, answer)); //send answer
