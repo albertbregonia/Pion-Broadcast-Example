@@ -1,4 +1,4 @@
-# Pion WebRTC Broadcast Example
+# Pion and JavaScript WebRTC Broadcast Example
 This repository serves as an example/template for creating a WebRTC based Web Application.
 
 This is the format I usually follow and I will use this repository as a boilerplate to constantly `git clone`
