@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"runtime/debug"
 	"sync"
+	"time"
 
+	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
 )
 
@@ -35,14 +37,10 @@ func SignalingServer(w http.ResponseWriter, r *http.Request) {
 	if e != nil {
 		panic(e)
 	}
-	defer peer.Close()
-	if _, e := peer.AddTransceiverFromTrack(whiteboard, //add whiteboard video
-		webrtc.RTPTransceiverInit{Direction: webrtc.RTPTransceiverDirectionSendonly}); e != nil {
-		panic(e)
-	}
 	if _, e := peer.AddTrack(whiteboard); e != nil {
 		panic(e)
 	}
+	defer peer.Close()
 
 	peer.OnConnectionStateChange(
 		func(pcs webrtc.PeerConnectionState) { log.Println(`peer connection state:`, pcs.String()) })
@@ -59,19 +57,34 @@ func SignalingServer(w http.ResponseWriter, r *http.Request) {
 		}
 		signaler.SendSignal(Signal{`ice`, string(iceJS)})
 	})
+
 	peer.OnTrack(func(track *webrtc.TrackRemote, receiver *webrtc.RTPReceiver) {
 		defer ErrorHandler()
-		log.Println(`got track!`)
+		var lastTimestamp uint32 = 0
+		keyframePeriod := 500 * time.Millisecond
+		lastKeyframe := time.Now().Add(-keyframePeriod)
 		for {
 			packet, _, e := track.ReadRTP()
 			if e != nil {
 				panic(e)
 			}
-			if e := whiteboard.WriteRTP(packet); e != nil {
-				panic(e)
+			if time.Since(lastKeyframe) >= keyframePeriod {
+				if e := peer.WriteRTCP([]rtcp.Packet{
+					&rtcp.PictureLossIndication{MediaSSRC: uint32(track.SSRC())}}); e != nil {
+					panic(e)
+				}
 			}
+			oldTimestamp := packet.Timestamp //old time stamp relative to the incoming track
+			if lastTimestamp == 0 {
+				packet.Timestamp = 0
+			} else { //packet timestamps have been modified to be the change in time since the last frame
+				packet.Timestamp -= lastTimestamp
+			}
+			lastTimestamp = oldTimestamp
+			whiteboardPackets <- packet
 		}
 	})
+
 	if e := signaler.SendSignal(Signal{`offer-request`, `{}`}); e != nil {
 		panic(e)
 	}

@@ -2,12 +2,15 @@
 package main
 
 import (
+	"errors"
+	"io"
 	"log"
 	"net/http"
 	"sync"
 
 	"github.com/gorilla/websocket"
 	"github.com/pion/interceptor"
+	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v3"
 )
 
@@ -20,8 +23,9 @@ var (
 	config = webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{{URLs: []string{`stun:stun.l.google.com:19302`}}},
 	}
-	whiteboard *webrtc.TrackLocalStaticRTP
-	api        *webrtc.API
+	whiteboard        *webrtc.TrackLocalStaticRTP
+	whiteboardPackets = make(chan *rtp.Packet)
+	api               *webrtc.API
 )
 
 //Run setup and host webserver on https://localhost/
@@ -64,6 +68,23 @@ func RTCSetup() {
 		`whiteboard`,
 		`whiteboard`,
 	)
+	go func() {
+		//whiteboard goroutine to handle incoming packets and give packets a valid sequence number
+		//so that packets are going to be sent in as if we were reading frames from a file
+		var currentTimestamp uint32 = 0
+		for sequenceNumber := uint16(0); ; sequenceNumber++ {
+			packet := <-whiteboardPackets
+			currentTimestamp += packet.Timestamp //adjust the current timestamp
+			packet.Timestamp = currentTimestamp
+			packet.SequenceNumber = sequenceNumber
+			if e := whiteboard.WriteRTP(packet); e != nil {
+				if errors.Is(e, io.ErrClosedPipe) {
+					return
+				}
+				panic(e)
+			}
+		}
+	}()
 }
 
 //SignalingSocket is a thread safe WebSocket used only for establishing WebRTC connections
