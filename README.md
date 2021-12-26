@@ -22,7 +22,9 @@ and the WebRTC peer connection. `SignalingServer` will do this operation in the 
 8. Waits for packets in the `OnTrack` function to write to the broadcast track
 
 The frontend will then initialize the event handlers for drawing on the canvas and the video feed
-from drawing on the canvas should be distributed to all peers connected to the server through the dummy track
+from drawing on the canvas should be distributed to all peers connected to the server through the dummy track.
+Any user is allowed to draw on the their canvas and submit their video feed. However, multiplexing is not strictly
+enforced. Therefore, the broadcasted video feed is simply mesh of different frames send by local whiteboards.
 
 ## Dependencies
 - [pion/webrtc](https://github.com/pion/webrtc)
