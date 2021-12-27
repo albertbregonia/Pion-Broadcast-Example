@@ -15,6 +15,29 @@ import (
 
 // Main handler for creating/managing a WebSocket/WebRTC PeerConnection
 
+var (
+	peers    = make([]*webrtc.PeerConnection, 0)
+	peersMtx = sync.Mutex{}
+)
+
+func AddPeer(peer *webrtc.PeerConnection) {
+	peersMtx.Lock()
+	defer peersMtx.Unlock()
+	peers = append(peers, peer)
+}
+
+func RemovePeer(peer *webrtc.PeerConnection) {
+	peersMtx.Lock()
+	defer peersMtx.Unlock()
+	for i := range peers {
+		if peers[i] == peer {
+			peer.Close()
+			peers = append(peers[:i], peers[i+1:]...)
+			return
+		}
+	}
+}
+
 func ErrorHandler() {
 	if e := recover(); e != nil {
 		debug.PrintStack()
@@ -37,10 +60,11 @@ func SignalingServer(w http.ResponseWriter, r *http.Request) {
 	if e != nil {
 		panic(e)
 	}
+	AddPeer(peer)
+	defer RemovePeer(peer)
 	if _, e := peer.AddTrack(whiteboard); e != nil {
 		panic(e)
 	}
-	defer peer.Close()
 
 	peer.OnConnectionStateChange(
 		func(pcs webrtc.PeerConnectionState) { log.Println(`peer connection state:`, pcs.String()) })
@@ -69,12 +93,16 @@ func SignalingServer(w http.ResponseWriter, r *http.Request) {
 				panic(e)
 			}
 			if time.Since(lastKeyframe) >= keyframePeriod {
-				if e := peer.WriteRTCP([]rtcp.Packet{
-					&rtcp.PictureLossIndication{MediaSSRC: uint32(track.SSRC())}}); e != nil {
-					panic(e)
+				peersMtx.Lock()
+				for _, peer := range peers { //force everyone to refresh
+					if peer.WriteRTCP([]rtcp.Packet{
+						&rtcp.PictureLossIndication{MediaSSRC: uint32(track.SSRC())}}) != nil {
+						return
+					}
 				}
+				peersMtx.Unlock()
 			}
-			oldTimestamp := packet.Timestamp //old time stamp relative to the incoming track
+			oldTimestamp := packet.Timestamp //save the actual packet timestamp
 			if lastTimestamp == 0 {
 				packet.Timestamp = 0
 			} else { //packet timestamps have been modified to be the change in time since the last frame

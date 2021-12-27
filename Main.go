@@ -62,7 +62,7 @@ func RTCSetup() {
 			MimeType:     webrtc.MimeTypeVP8,
 			ClockRate:    90000,
 			Channels:     0,
-			SDPFmtpLine:  "",
+			SDPFmtpLine:  ``,
 			RTCPFeedback: nil,
 		},
 		`whiteboard`,
@@ -74,7 +74,12 @@ func RTCSetup() {
 		var currentTimestamp uint32 = 0
 		for sequenceNumber := uint16(0); ; sequenceNumber++ {
 			packet := <-whiteboardPackets
-			currentTimestamp += packet.Timestamp //adjust the current timestamp
+			if sequenceNumber > 10 { //take in 10 sample frames
+				if avg := currentTimestamp / uint32(sequenceNumber); packet.Timestamp > avg {
+					packet.Timestamp = avg // if the time elapsed since a packet's last frame is large, just set it to the average to avoid video delay
+				}
+			}
+			currentTimestamp += packet.Timestamp //adjust the simulated timestamp
 			packet.Timestamp = currentTimestamp
 			packet.SequenceNumber = sequenceNumber
 			if e := whiteboard.WriteRTP(packet); e != nil {
