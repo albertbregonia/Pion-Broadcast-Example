@@ -45,7 +45,7 @@ func RTCSetup() {
 			MimeType:     webrtc.MimeTypeVP8,
 			ClockRate:    90000,
 			Channels:     0,
-			SDPFmtpLine:  "",
+			SDPFmtpLine:  ``,
 			RTCPFeedback: nil,
 		},
 		PayloadType: 96,
