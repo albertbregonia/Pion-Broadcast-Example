@@ -19,7 +19,7 @@ ws.onclose = ws.onerror = ({reason}) => alert(`Disconnected ${reason}`);
 const rtc = new RTCPeerConnection({iceServers: [{urls: `stun:stun.l.google.com:19302`}]}); //create a WebRTC instance
 rtc.onicecandidate = ({candidate}) => candidate && ws.send(formatSignal(`ice`, candidate)); //if the ice candidate is not null, send it to the peer
 rtc.oniceconnectionstatechange = () => rtc.iceConnectionState == `failed` && rtc.restartIce();
-rtc.ontrack = ({streams}) => { console.log(streams); broadcast.srcObject = streams[0]; };
+rtc.ontrack = ({streams}) => { broadcast.srcObject = streams[0]; };
 
 ws.onmessage = async ({data}) => { //signal handler
     const signal = JSON.parse(data),
@@ -90,15 +90,11 @@ function drawHandler(e) {
     if(!whiteboard.isDrawing)
         return;
     let x = e.clientX - whiteboard.offsetLeft,
-        y = e.clientY - whiteboard.offsetTop,
-        clientX = e.clientX, 
-        clientY = e.clientY;
+        y = e.clientY - whiteboard.offsetTop;
     if (e.touches && e.touches.length == 1) {
         let touch = e.touches[0];
         x = touch.pageX - whiteboard.offsetLeft;
         y = touch.pageY - whiteboard.offsetTop;
-        clientX = touch.pageX;
-        clientY = touch.pageY;
     }
     whiteboard.brush.lineTo(x, y);
     whiteboard.brush.stroke();
