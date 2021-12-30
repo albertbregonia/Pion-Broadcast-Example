@@ -54,7 +54,7 @@ func RTCSetup() {
 	}
 	registry := &interceptor.Registry{}
 	if e := webrtc.RegisterDefaultInterceptors(mediaEngine, registry); e != nil {
-		log.Fatal(e)
+		panic(e)
 	}
 	api = webrtc.NewAPI(webrtc.WithMediaEngine(mediaEngine), webrtc.WithInterceptorRegistry(registry))
 	whiteboard, _ = webrtc.NewTrackLocalStaticRTP( //register shared video track to broadcast an HTML canvas video stream
