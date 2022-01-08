@@ -99,10 +99,10 @@ type SignalingSocket struct {
 }
 
 //SendSignal is a thread safe wrapper for the `websocket.WriteJSON()` function
-func (signaler *SignalingSocket) SendSignal(v interface{}) error {
+func (signaler *SignalingSocket) SendSignal(s Signal) error {
 	signaler.Lock()
 	defer signaler.Unlock()
-	return signaler.WriteJSON(v)
+	return signaler.WriteJSON(s)
 }
 
 //Signals to be written on a SignalingSocket in order to establish WebRTC connections
