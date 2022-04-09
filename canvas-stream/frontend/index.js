@@ -13,7 +13,6 @@ function formatSignal(event, data) {
 }
 
 const ws = new WebSocket(`wss://${location.hostname}:${location.port}/connect`); //create a websocket for WebRTC signaling 
-ws.onopen = () => console.log(`Connected`);
 ws.onclose = ws.onerror = ({reason}) => alert(`Disconnected ${reason}`);
 
 const rtc = new RTCPeerConnection({iceServers: [{urls: `stun:stun.l.google.com:19302`}]}); //create a WebRTC instance
@@ -21,41 +20,44 @@ rtc.onicecandidate = ({candidate}) => candidate && ws.send(formatSignal(`ice`, c
 rtc.oniceconnectionstatechange = () => rtc.iceConnectionState == `failed` && rtc.restartIce();
 rtc.ontrack = ({streams}) => { broadcast.srcObject = streams[0]; };
 
-ws.onmessage = async ({data}) => { //signal handler
-    const signal = JSON.parse(data),
-          content = JSON.parse(signal.data);
-    switch(signal.event) {
-        case `offer-request`:
-            console.log(`got offer-request!`);
-            const whiteboardStream = whiteboard.captureStream(60);
-            for(const track of whiteboardStream.getTracks())
-                rtc.addTrack(track, whiteboardStream); //add whiteboard stream to offer
-            whiteboardSetup();
-            const offer = await rtc.createOffer();
-            await rtc.setLocalDescription(offer);
-            ws.send(formatSignal(`offer`, offer)); //send offer
-            console.log(`sent offer!`, offer);
-            break;
-        case `offer`:
-            console.log(`got offer!`, content);
-            await rtc.setRemoteDescription(content); //accept offer
-            const answer = await rtc.createAnswer();
-            await rtc.setLocalDescription(answer);
-            ws.send(formatSignal(`answer`, answer)); //send answer
-            console.log(`sent answer!`, answer);
-            break;
-        case `answer`:
-            console.log(`got answer!`, content);
-            await rtc.setRemoteDescription(content); //accept answer
-            break;
-        case `ice`:
-            console.log(`got ice!`, content);
-            rtc.addIceCandidate(content); //add ice candidates
-            break;
-        default:
-            console.log(`Invalid message:`, content);
-    }
-};
+ws.onopen = () => {
+      console.log(`Connected`);
+      ws.onmessage = async ({data}) => { //signal handler
+          const signal = JSON.parse(data),
+                content = JSON.parse(signal.data);
+          switch(signal.event) {
+              case `offer-request`:
+                  console.log(`got offer-request!`);
+                  const whiteboardStream = whiteboard.captureStream(60);
+                  for(const track of whiteboardStream.getTracks())
+                      rtc.addTrack(track, whiteboardStream); //add whiteboard stream to offer
+                  whiteboardSetup();
+                  const offer = await rtc.createOffer();
+                  await rtc.setLocalDescription(offer);
+                  ws.send(formatSignal(`offer`, offer)); //send offer
+                  console.log(`sent offer!`, offer);
+                  break;
+              case `offer`:
+                  console.log(`got offer!`, content);
+                  await rtc.setRemoteDescription(content); //accept offer
+                  const answer = await rtc.createAnswer();
+                  await rtc.setLocalDescription(answer);
+                  ws.send(formatSignal(`answer`, answer)); //send answer
+                  console.log(`sent answer!`, answer);
+                  break;
+              case `answer`:
+                  console.log(`got answer!`, content);
+                  await rtc.setRemoteDescription(content); //accept answer
+                  break;
+              case `ice`:
+                  console.log(`got ice!`, content);
+                  rtc.addIceCandidate(content); //add ice candidates
+                  break;
+              default:
+                  console.log(`Invalid message:`, content);
+          }
+      };
+}
 
 // set up drawing on the whiteboard
 
